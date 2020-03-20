@@ -1,4 +1,4 @@
-function synthBOLDgenerator(json, output_dir)
+function DTcalc = synthBOLDgenerator(json, output_dir)
 % Takes a json file with parameters required to generate:
 %     1/ name.nii.gii    : nifti file with the synthetic BOLD signal
 %     2/ name.json       : json file with the parameters of the BOLD tSeries
@@ -174,6 +174,7 @@ PARAMETERS.Type             = string(PARAMETERS.Type);
 PARAMETERS.signalPercentage = string(PARAMETERS.signalPercentage);
 PARAMETERS.RF.Type          = string(PARAMETERS.RF.Type);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
+PARAMETERS.Stimulus.myload = string(PARAMETERS.Stimulus.myload);
 
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
@@ -181,7 +182,10 @@ synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
 if height(synthDT) > 32000
 	error("Attempting to write more than 32000 per dimension (%i). TODO: Matlab's niftiwrite will automatically use Nifti-2 to write 2^63 -1 (instead of the current 2^15 -1.", height(synthDT))
 end
-pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
+
+DTcalc = pmForwardModelCalculate(synthDT,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
+
+% DTcalc = pmForwardModelCalculate(synthDT, 'useparallel',J.useparallel,'writefiles',true,'outputdir',output_dir,'subjectname',J.subjectName); 
 %% Generate the files
 
 

@@ -448,9 +448,32 @@ pm.Noise.seed=12345;
             % Load stimulus
             stimValues = pm.Stimulus.getStimValues;
             
+            
             % Initialize timeSeries, it is the signal prior to convolution
             [r,c,t]    = size(stimValues);
             spaceStim  = reshape(stimValues,r*c,t);
+        
+            
+            % kis edit
+            % down sample ms to seconds (1000 -> 1)
+%              switch pm.Type
+%                  case 'cst'
+% %                      load('/localhome/insubkim/Documents/experiments/PRFmodel/data/stimulus/cst-060.mat')
+%                      
+%                      cell_spaceStim = num2cell(spaceStim',1);
+% %                      tr=1;
+%                      tr=pm.TR;
+%                      fs=1000;
+%                      stim_trs = cellfun(@(X) reshape(X', size(X, 2), tr * fs, []), ...
+%                          cell_spaceStim, 'uni', false);
+%                      stim_trs = cellfun(@(X) ceil(squeeze(mean(X, 2))'), ...
+%                          stim_trs, 'uni', false);
+%                      
+%                      spaceStim = cell2mat(stim_trs');
+%              end
+
+            
+            
             % Calculate time series
             pm.timeSeries = spaceStim' * pm.RF.values(:);
             switch pm.Type
@@ -501,8 +524,12 @@ pm.Noise.seed=12345;
                     
                     pm.BOLD = conv2(timeSeries, getcanonicalhrf(pm.TR,pm.TR), 'same')'; % This is the same now
                     %}
+                    
+                case {'cst'}
+%                     pm.timeSeries = pm.timeSeries .^ 0.05;
+
                 otherwise
-                    error('Model %s not implemented, select linear or CSS', pm.Type)
+                     error('Model %s not implemented, select linear or CSS', pm.Type)
             end
                 convValues    = conv(pm.timeSeries',pm.HRF.values);
                 % Create the bold signal with the correct size

@@ -74,8 +74,8 @@ fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
 
 
 cd(homedir);
-
-if exist(fullfile(homedir,'Raw'),'dir');error('RAW DIR EXISTS');end
+% 
+% if exist(fullfile(homedir,'Raw'),'dir');error('RAW DIR EXISTS');end
 mkdir(fullfile(homedir, 'Raw'));
 mkdir(fullfile(homedir, 'Stimuli'));
 
@@ -88,6 +88,8 @@ copyfile(stimfile, fullfile(homedir, 'Stimuli'));
 ni = niftiRead(fullfile(homedir, 'Stimuli', sprintf('%s%s', f, e)));
 
 images = squeeze(ni.data);
+images=single(images);
+
 pixdim = niftiGet(ni, 'pixdim');
 tr     = pixdim(end);
 sprintf('/n/n USING TR:%2.2f/n/n',tr)
@@ -122,12 +124,6 @@ params.functionals  = fullfile('.','Raw', sprintf('%s%s', f,e));
 
 % Run it:
 ok = mrInit(params);
-params
-dir(fullfile('.', filesep,'Raw'))
-
-params
-dir(fullfile('.', filesep,'Raw'))
-
 
 
 %% Check it
@@ -180,7 +176,7 @@ dataTYPES = dtSet(dataTYPES, 'rm stim params', sParams);
 
 saveSession();
 % Check it
-vw = rmLoadParameters(vw);
+% vw = rmLoadParameters(vw);
 
 % edit GLU: this is opening a new window, hide it
 % [~, M] = rmStimulusMatrix(viewGet(vw, 'rmparams'), [], [], 1, false);
@@ -222,7 +218,7 @@ mrvCleanWorkspace
 % Delete the temp folder with all the tmp files, we only want the results
 cd(homedir)
 cd('../')
-rmdir(homedir, 's')
+% rmdir(homedir, 's')
 
 %% Prepare results
 

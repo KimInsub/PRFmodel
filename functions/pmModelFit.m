@@ -127,7 +127,7 @@ if iscell(input)
         end
     end
     TRsynth = unique(synthDT.TR); if (length(TRsynth) ~= 1),error('More than 1 TR in synth json'),end
-    signalPercentage = unique(synthDT.signalPercentage); if (length(signalPercentage) ~= 1),error('More than 1 signalPercentage in synth json'),end
+%     signalPercentage = unique(synthDT.signalPercentage); if (length(signalPercentage) ~= 1),error('More than 1 signalPercentage in synth json'),end
     
     % 3: nifti with the stimuli
     stimulus = niftiRead(STIMname);
@@ -146,10 +146,12 @@ if iscell(input)
         error('Data and stimulus have different TR')
     end
     % Stimulus related
+  
     Stimulus.ResizedHorz = unique(synthDT.Stimulus.ResizedHorz); if (length(Stimulus.ResizedHorz) ~= 1),error('More than 1 ResizedHorz in synth json'),end
     Stimulus.ResizedVert = unique(synthDT.Stimulus.ResizedVert); if (length(Stimulus.ResizedVert) ~= 1),error('More than 1 ResizedVert in synth json'),end
     Stimulus.fieldofviewHorz = unique(synthDT.Stimulus.fieldofviewHorz);if (length(Stimulus.fieldofviewHorz) ~= 1),error('More than 1 fieldofviewHorz in synth json'),end
     Stimulus.fieldofviewVert = unique(synthDT.Stimulus.fieldofviewVert);if (length(Stimulus.fieldofviewVert) ~= 1),error('More than 1 fieldofviewVert in synth json'),end
+   
     Stimulus.spatialSampleHorz = Stimulus.fieldofviewHorz/Stimulus.ResizedHorz;
     Stimulus.spatialSampleVert = Stimulus.fieldofviewVert / Stimulus.ResizedVert;
     stimradius    = Stimulus.fieldofviewHorz / 2;

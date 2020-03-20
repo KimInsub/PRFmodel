@@ -106,21 +106,35 @@ for nn=1:nchcks
         %% High Level Variables
         isprfmodel = @(x)(isa(x,'prfModel'));
         for vn = dt.Properties.VariableNames
-            if ~istable(dt.(vn{:})) && ~isprfmodel(dt.(vn{:}))
-                if iscell(dt.(vn{:}))
-                    pm.(vn{:}) = dt.(vn{:}){:};
+            temp=vn;
+            if ~istable(dt.(temp{:})) && ~isprfmodel(dt.(temp{:}))
+                if iscell(dt.(temp{:}))
+                    pm.(temp{:}) = dt.(temp{:}){:};
                 else
-                    pm.(vn{:}) = dt.(vn{:});
+                    pm.(temp{:}) = dt.(temp{:});
                 end
             end
         end
+%         
+%         for vn = dt.Properties.VariableNames
+%             if ~istable(dt.(vn{:})) && ~isprfmodel(dt.(vn{:}))
+%                 if iscell(dt.(vn{:}))
+%                     pm.(vn{:}) = dt.(vn{:}){:};
+%                 else
+%                     pm.(vn{:}) = dt.(vn{:});
+%                 end
+%             end
+%         end
         
         %% Stimulus
         for jj=1:width(dt.Stimulus)
                 paramName               = dt.Stimulus.Properties.VariableNames{jj};
                 pm.Stimulus.(paramName) = dt.Stimulus.(paramName);
+        
+
         end
         
+     
         % Check if did not change from the previous line, calculate again or copy the old one
         if ii > 1
             if isequal(dtprev.Stimulus, dt.Stimulus)
@@ -131,16 +145,16 @@ for nn=1:nchcks
             end
         else
             pm.Stimulus.compute;
+   
             pm.Stimulus.userVals = pm.Stimulus.getStimValues;
         end
-        
+     
         %% RF
         for jj=1:width(dt.RF)
             paramName         = dt.RF.Properties.VariableNames{jj};
             pm.RF.(paramName) = dt.RF.(paramName);
         end
         pm.RF.compute;
-        
         %% HRF
         for jj=1:width(dt.HRF)
             paramName          = dt.HRF.Properties.VariableNames{jj};
@@ -152,7 +166,6 @@ for nn=1:nchcks
             end
         end
         pm.HRF.compute;
-        
         %% Noise
         for jj=1:width(dt.Noise)
             paramName            = dt.Noise.Properties.VariableNames{jj};
@@ -173,7 +186,6 @@ for nn=1:nchcks
             
         end
         pm.Noise.compute;
-        
         %% Compute the synthetic signal
         % The compute at the top level computes all the lovel level ones.
         % Just do it once here.
@@ -183,7 +195,6 @@ for nn=1:nchcks
         % only calculate the last step.
         pm.computeSubclasses = false;
         pm.compute;
-        
         %% Assign it to the cell array (or Write back the updated pm model)
         DT.pm(ii) = pm;
         
@@ -256,6 +267,7 @@ if writefiles
         tmpjson      = jsonread(tmpjsonname);
         jsonfile     = [jsonfile;tmpjson]; 
     end
+    
     % BOLD
     BOLDnifti.data   = BOLDdata;
     BOLDnifti.dim    = size(BOLDdata);
@@ -266,6 +278,8 @@ if writefiles
     niftiWrite(BOLDnifti);
     if ~exist(BOLDnifti.fname,'file'),error('Could not create output BOLD %s in %s', BOLDnifti.fname,outputdir);end
 
+    
+   
     % json
     jsonfname = fullfile(outputdir, sprintf('%s.json', subjectName));
     % Encode json
@@ -283,6 +297,14 @@ if writefiles
     succ = movefile(stimNiftiFname,outputdir);
     if ~succ;error('Could not move %s to %s', stimNiftiFname,outputdir);end
 
+     %mat file to double check  
+    temptname = [outputdir '/bold.mat'];
+    synBOLD = squeeze(BOLDnifti.data);
+    synSTIM = squeeze(pm1.Stimulus.userVals(51,51,:));
+    save(temptname,'synBOLD','synSTIM');
+
+    
+    
 else
     disp('Concatenating the .mat files back')
     for nn=1:nchcks
