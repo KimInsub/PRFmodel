@@ -305,7 +305,9 @@ pm.Noise.seed=12345;
         % The color of the wheel is not independent of the color of the car, so
         % the pm model itself will be a property of the subclass as well.
         uniqueTR;          % This is part of the main model. It will be set in all subclasses
+    
     end
+    
     properties (GetAccess=public, SetAccess=public) % Changed from SetAccess=private, check
         Type             ; % Basic, CSS ... (char)
         cssexp           ;
@@ -324,6 +326,7 @@ pm.Noise.seed=12345;
         BOLD             ; % BOLD signal value, scaled (before noise)
         BOLDnoise        ; % Final value, composed of the BOLD + noise
         SNR              ; % in DB, knowing the signal and the noise
+        cst              ; % cst values added
     end
     properties (Dependent)
         TR               ; % This one is derived and copied to all other classes
@@ -374,7 +377,7 @@ pm.Noise.seed=12345;
             pm.BOLDmeanValue     = p.Results.boldmeanvalue;
             pm.BOLDcontrast      = p.Results.boldcontrast;  % In percentage
             pm.computeSubclasses = p.Results.computesubclasses;
-            
+
             % Create the classes, and initialize a prfModel inside it
             pm.Stimulus          = pmStimulus(pm);
             pm.HRF               = pmHRF(pm); 
@@ -385,6 +388,9 @@ pm.Noise.seed=12345;
         function set.TR(pm, tr)
             pm.uniqueTR      = tr;
         end
+        
+        
+        
         function v = get.TR(pm)
             v = pm.uniqueTR;
         end
@@ -525,8 +531,168 @@ pm.Noise.seed=12345;
                     pm.BOLD = conv2(timeSeries, getcanonicalhrf(pm.TR,pm.TR), 'same')'; % This is the same now
                     %}
                     
-                case {'cst'}
-%                     pm.timeSeries = pm.timeSeries .^ 0.05;
+               case {'cst'}
+                   
+                   % do default as dummy check
+                   pm.timeSeries = spaceStim' * pm.RF.values(:);
+
+                   % [cst] define parameters
+                   % whatstimtype = 'b';
+                   % temp_type = '2ch-exp-sig'; % need to parse
+
+                    whatstimtype = char(pm.Stimulus.stimseq);
+                    temp_type = char(pm.Stimulus.temporalType); 
+
+                    fit_exps = {'Exp2'};
+                    dohrf = 2;
+                    
+                    irfdir = [cstRootPath '/IRF/'];
+                    irf_file = [irfdir 'cst_seq-' whatstimtype '_model-' temp_type '_irf.mat'];
+                    if isfile(irf_file)
+                        disp('*cst irf exists no need to make a new one!*')
+                        load(irf_file);
+                    else
+                             
+                    [temporal] = cst_stimconvert(stimValues, whatstimtype, ...
+                        0.033 ,30, 0,[]);
+                    cststim = reshape(temporal.stim, ...
+                        size(temporal.stim,1)*size(temporal.stim,2),[]);
+                   
+                    allstimimages = cststim';
+                    fprintf(1,'.... synth cst .... \n');
+                    
+                    %%%% convert back to ones %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    %%%% make it as cell %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    allstimimages(find(allstimimages)) = 1;
+                    cellimage = num2cell(allstimimages,1)';
+                    
+                    mn = length(cellimage);
+                    ms = [[1:ceil(mn./200):mn-2] mn+1];
+                    
+                    fprintf('Generating irf for %s model...\n', temp_type)
+                    for mn = 1:numel(ms)-1
+                        %                         for mn = 441
+                        
+                        stimirf_base=[];
+                        stimirf_t_s=[];
+                        stimirf_t_t=[];
+                        
+                        tmodel = stModel(temp_type, fit_exps,'default');
+                        tmodel.stim = cellimage(ms(mn):ms(mn+1)-1);
+                        
+                        
+                        
+                        [tmodel.onsets, tmodel.offsets, dur] = cellfun(@cst_codestim, ...
+                            tmodel.stim, 'uni', false);
+                        
+                        
+                        %%%% deal with empty cells (all zero)
+                        empty_cells = cellfun(@isempty, tmodel.onsets);
+                        if sum(empty_cells) > 0
+                            sample =  tmodel.stim(find(empty_cells,1));
+                            if tmodel.num_channels == 2
+                                emptysample = {[double(sample{1}) double(sample{1})]};
+                            else
+                                emptysample = {[double(sample{1})]};
+                            end
+                            tmodel.stim(empty_cells) ={[]};
+                        end
+                        
+                        %%%% make IRFs
+                        tmodel = cst_pred_runs(tmodel,dohrf);
+                        
+                        %%% put dummy into empty cells
+                        if sum(empty_cells) > 0
+                            tmodel.pixel_preds(empty_cells) = emptysample;
+                        end
+                        %%%% transpose and sum up two channels
+                        stimirf_base = cellfun(@transpose,tmodel.pixel_preds,'UniformOutput',false);
+                        
+                        if contains(temp_type,'2ch')
+                            stimirf_t_s  = cell2mat(cellfun(@(X) X(1,:), stimirf_base, 'uni', false))'; %  sustained
+                            stimirf_t_t  = cell2mat(cellfun(@(X) X(2,:), stimirf_base, 'uni', false))'; % transient
+                            stimirf_base = cell2mat(cellfun(@sum, stimirf_base, 'uni', false))';        % sum
+                            
+                            stimirf_chan_s(:,ms(mn):ms(mn+1)-1) = stimirf_t_s;
+                            stimirf_chan_t(:,ms(mn):ms(mn+1)-1) = stimirf_t_t;
+                        else
+                            stimirf_base=cell2mat(stimirf_base)'; %        30000     X   1412
+                        end
+                        
+                        stimirf(:,ms(mn):ms(mn+1)-1) = stimirf_base;
+                        
+                        if ismember(mn, round((1:10)/10* numel(ms)-1)), % every 10% draw a dot
+                            fprintf(1,'(irf)');drawnow;
+                        end
+                        
+                        
+                    end
+                    
+                    if tmodel.num_channels == 2
+                        tmodel.chan_preds{1} = stimirf_chan_s;
+                        tmodel.chan_preds{2} = stimirf_chan_t;
+                    else
+                        tmodel.chan_preds{1} = stimirf_base;
+                    end
+                    
+                    
+                    % temporal channel normalization
+                    % need to think about ways of normalizing in the future.
+                    temporal_channel_normalization=false;
+                    if temporal_channel_normalization
+                        tmodel.normT = max(max(stimirf_chan_s))/max(max(stimirf_chan_t));
+                    else
+                        tmodel.normT = 1;
+                    end
+           
+                        
+                    save(irf_file, 'tmodel','-v7.3');
+                    
+                    end % end of irf creation
+                    
+               
+                    
+                    
+                    
+                    % convolve rf with stimulus for each t-channel
+                    for cc=1:tmodel.num_channels
+                        pred = tmodel.chan_preds{cc}*pm.RF.values(:);
+                        
+                        % apply css
+                        pred = bsxfun(@power, pred, 0.05);
+                        pred = double(pred);
+                        
+                        % apply hrf
+                        pred_cell = num2cell(pred,1)';
+                        npixel_max = size(1,2);
+                        
+                        % use mrvista HRF
+                        %   params.stim(n).images = filter(params.analysis.Hrf{n}, 1, params.stim(n).images'); % images: pixels by time (so images': time x pixels)
+                        %                 hrf = params.analysis.Hrf;
+                        
+                        hrf = {pm.HRF.values'};
+                        hrf = tmodel.irfs.hrf;
+                        
+                        %                         vistaHRF = conv(pred_cell{1}, pm.HRF.values);
+                        %                         vistaHRF = conv(pred_cell{1}', tmodel.irfs.hrf{1});
+                        % hrf = tmodel.irfs.hrf;
+                        curhrf = repmat(hrf, npixel_max, 1);
+                        pred_hrf = cellfun(@(X, Y) convolve_vecs(X, Y, tmodel.fs, 1 / tmodel.tr), ...
+                            pred_cell, curhrf, 'uni', false);
+                        pred_hrf = cellfun(@transpose,pred_hrf,'UniformOutput',false);
+                        pred_hrf=cell2mat(pred_hrf)';
+                        %
+                        if cc ==2
+                            pred_hrf = pred_hrf*tmodel.normT;
+                        end
+                        
+                        % store
+                        prediction(:,cc) = pred_hrf;
+                        %             prediction{n} = pred_hrf;
+                        
+                    end
+               
+  
 
                 otherwise
                      error('Model %s not implemented, select linear or CSS', pm.Type)
@@ -542,6 +708,8 @@ pm.Noise.seed=12345;
                     pm.showConvolution
                     hold on
                 end
+                
+            
             % Scale the signal so that it has the required mean and contrast
             
             % Convert the output requested in pm.signalPercentage 
@@ -566,10 +734,69 @@ pm.Noise.seed=12345;
                     pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'spc'}
                     pm.BOLD = 2 * pm.BOLDcontrast * pm.BOLDconv;
+                    
+                    % CST under construction
+                    % [CST]: need to figure out amplitude
+                    if strcmp(pm.Type,'cst')
+                        
+                        c1 =  2 * pm.BOLDcontrast * prediction(:,1);
+                        c2 = 2 * pm.BOLDcontrast * prediction(:,2);
+                        cstBOLD = 2 * pm.BOLDcontrast * sum(prediction,2)';
+                        %  c1 =  pm.BOLDmeanValue * (1 + 10 * pm.BOLDcontrast/100 * prediction(:,1));
+                        %  c2 = pm.BOLDmeanValue * (1 + 10 * pm.BOLDcontrast/100 * prediction(:,2));
+                        %  cstBOLD = pm.BOLDmeanValue * (1 + 10 * pm.BOLDcontrast/100 * sum(prediction,2)');
+                        
+                        pm.BOLD = cstBOLD;
+                        pm.cst = [c1 c2  cstBOLD'];
+%                         pm.cst{1} = c1;
+%                         pm.cst{2} = c2;
+%                         pm.cst{3} = pm.BOLD;
+% 
+                            
+                    % [cst] plot
+%                         figure()
+%                         subplot(1,2,1)
+%                         plot(prediction(:,1),'LineWidth',2); hold on
+%                         plot(prediction(:,2),'LineWidth',2,'color','red'); hold on
+%                         plot(sum(prediction,2),'LineWidth',2,'color','k'); hold on
+%                         legend('sus','tran','sum')
+%                         title(['2-ch synth'])
+%                         
+%                         subplot(1,2,2)
+%                         plot(c1,'LineWidth',2); hold on
+%                         plot(c2,'LineWidth',2,'color','red'); hold on
+%                         plot(cstBOLD,'LineWidth',2,'color','k'); hold on
+%                         title(['artificial amplitidue given 2-ch synth'])
+%                         
+%                         %check the effect of exponent for mrVisa
+%                         figure()
+%                         pm.timeSeries = spaceStim' * pm.RF.values(:);
+%                         pm.timeSeries = pm.timeSeries .^ 0.05;
+%                         cssmodel    = conv(pm.timeSeries',pm.HRF.values);
+%                         
+%                         pm.timeSeries = spaceStim' * pm.RF.values(:);
+%                         linearmodel    = conv(pm.timeSeries',pm.HRF.values);
+%                         
+%                         plot(cssmodel); hold on
+%                         plot(linearmodel); hold on
+%                         legend('css','linear')
+%                         title(['exponent effect hrf'])
+
+
+                    end
+%                     
+                    
+                    
                 case {'frac', 'fractional'}
                     pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'bold'}
                     pm.BOLD = pm.BOLDmeanValue * (1 + 2 * pm.BOLDcontrast/100 * pm.BOLDconv);
+
+
+
+
+                    
+                    
                 otherwise
                     error('%s provided, valid values are frac, spc, and bold (default)', pm.signalPercentage)
             end
@@ -806,6 +1033,20 @@ pm.Noise.seed=12345;
                     pm.BOLDnoise = pm.BOLD + pm.Noise.values;
                  case {'spc'}
                     pm.BOLDnoise = pm.BOLD + 100 * pm.Noise.values;
+                    
+                    % [cst]
+                    if strcmp(pm.Type,'cst')
+                        pm.BOLDnoise = pm.BOLD + 100 * pm.Noise.values;
+                        chan1 = pm.cst(:,1)' + 100 * pm.Noise.values;
+                        chan2 =  pm.cst(:,2)' + 100 * pm.Noise.values;
+                        chan3= pm.cst(:,3)'+ 100 * pm.Noise.values;
+                        pm.cst =[];
+                        pm.cst= [chan1;chan2;chan3 ];
+                        
+                    end
+                        %
+                    
+                    
                 case {'bold'}
                     pm.BOLDnoise = pm.BOLDmeanValue * ...
                                    (1 + 2 * pm.BOLDcontrast/100 * pm.BOLDconv + pm.Noise.values);

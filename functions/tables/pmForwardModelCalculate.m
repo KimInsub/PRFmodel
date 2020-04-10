@@ -297,9 +297,14 @@ if writefiles
     succ = movefile(stimNiftiFname,outputdir);
     if ~succ;error('Could not move %s to %s', stimNiftiFname,outputdir);end
 
-     %mat file to double check  
-    temptname = [outputdir '/bold.mat'];
-    synBOLD = squeeze(BOLDnifti.data);
+    %[cst] matfile save
+    matsing = DT.pm;
+    matseq = char(DT.Stimulus.stimseq);
+    mattype = char(DT.Stimulus.temporalType);
+    for vv = 1:length(DT.pm)
+        synBOLD{vv} = matsing(vv).cst;
+    end
+    temptname = [outputdir '/synBOLD_cst_seq-' matseq '-tm-' mattype '.mat'];
     synSTIM = squeeze(pm1.Stimulus.userVals(51,51,:));
     save(temptname,'synBOLD','synSTIM');
 

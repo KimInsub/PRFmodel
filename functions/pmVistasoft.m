@@ -35,7 +35,9 @@ p.addParameter('wsearch'      , 'coarse to fine', @ischar);
 p.addParameter('detrend'      , 1               , @isnumeric);
 p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
-p.addParameter('temporal', 'a'   , @ischar);
+
+p.addParameter('stimseq', 'a'   , @ischar);
+p.addParameter('temporalType', '2ch-exp-sig', @ischar);
 
 p.parse(homedir, stimfile, datafile, stimradius, varargin{:});
 % Assign it
@@ -46,7 +48,9 @@ wSearch       = p.Results.wsearch;
 detrend       = p.Results.detrend;
 keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
-temporal = p.Results.temporal;
+stimseq = p.Results.stimseq;
+temporalType = p.Results.temporalType;
+
 % Disp the input files for debugging
 fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
 fprintf('\n[pmVistasoft] This is stimfile: %s\n',stimfile)
@@ -192,7 +196,8 @@ vw = rmMain(vw, [], wSearch, ...
             'matFileName', 'tmpResults', ...
             'keepAllPoints', keepAllPoints, ...
             'numberStimulusGridPoints', numberStimulusGridPoints, ...
-            'temporaltype',temporal);
+            'stimseq',stimseq, ...
+            'temporalType',temporalType);
 
 % Load the results        
 

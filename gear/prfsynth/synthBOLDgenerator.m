@@ -175,6 +175,8 @@ PARAMETERS.signalPercentage = string(PARAMETERS.signalPercentage);
 PARAMETERS.RF.Type          = string(PARAMETERS.RF.Type);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 PARAMETERS.Stimulus.myload = string(PARAMETERS.Stimulus.myload);
+PARAMETERS.Stimulus.stimseq = string(PARAMETERS.Stimulus.stimseq);
+PARAMETERS.Stimulus.temporalType = string(PARAMETERS.Stimulus.temporalType);
 
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
