@@ -112,6 +112,7 @@ classdef pmRF <   matlab.mixin.SetGet & matlab.mixin.Copyable
                     rf.sigmaMinor     = sqrt(rf.PM.cssexp) * rf.sigmaMinor;
                     rf.dog_sigmaMajor = sqrt(rf.PM.cssexp) * rf.dog_sigmaMajor;
                     rf.dog_sigmaMinor = sqrt(rf.PM.cssexp) * rf.dog_sigmaMinor;
+                case 'cst'
             end
             % Compute stimulus just in case
             rf.PM.Stimulus.compute;

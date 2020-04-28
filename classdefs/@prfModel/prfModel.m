@@ -479,7 +479,6 @@ pm.Noise.seed=12345;
 %              end
 
             
-            
             % Calculate time series
             pm.timeSeries = spaceStim' * pm.RF.values(:);
             switch pm.Type
@@ -530,7 +529,47 @@ pm.Noise.seed=12345;
                     
                     pm.BOLD = conv2(timeSeries, getcanonicalhrf(pm.TR,pm.TR), 'same')'; % This is the same now
                     %}
-                    
+%                     
+%                   pm.RF.Type= 'tt';
+%                   pm.RF.sigmaMajor=5;
+%                   pm.RF.sigmaMinor=5;
+%                   pm.RF.compute
+% % 
+
+% figure(1)
+% subplot(1,3,1)
+% x=linspace(-101, 101,101);
+% y=x;
+% [X,Y]=meshgrid(x,y);
+% z = pm.RF.values;
+% surf(X,Y,z);
+% title(['my css'])
+% shading interp
+% axis tight
+% 
+% subplot(1,3,2)
+% load('normal_rf.mat')
+% x=linspace(-101, 101,101);
+% y=x;
+% [X,Y]=meshgrid(x,y);
+% surf(X,Y,b);
+% title(['nocss'])
+% shading interp
+% axis tight
+% 
+% subplot(1,3,3)
+% surf(X,Y,b-z);
+% title(['nocss - css'])
+% shading interp
+% axis tight
+% 
+% d=b-z;
+
+%                   a= pm.RF.values;
+%                   b=a
+%  
+%   load('css_rf.mat')
+
                case {'cst'}
                    
                    % do default as dummy check
@@ -539,20 +578,22 @@ pm.Noise.seed=12345;
                    % [cst] define parameters
                    % whatstimtype = 'b';
                    % temp_type = '2ch-exp-sig'; % need to parse
-
+                   
+                    whatname = char(pm.Stimulus.expName);
                     whatstimtype = char(pm.Stimulus.stimseq);
                     temp_type = char(pm.Stimulus.temporalType); 
-
+                    
                     fit_exps = {'Exp2'};
                     dohrf = 2;
                     
                     irfdir = [cstRootPath '/IRF/'];
-                    irf_file = [irfdir 'cst_seq-' whatstimtype '_model-' temp_type '_irf.mat'];
+                    irf_file = [irfdir whatname '_model-' temp_type '_irf.mat'];
+%                     irf_file = [irfdir 'cst_seq-' whatstimtype '_model-' temp_type '_irf.mat'];
                     if isfile(irf_file)
                         disp('*cst irf exists no need to make a new one!*')
                         load(irf_file);
                     else
-                             
+                    % convert to ms with different experiment temporal types        
                     [temporal] = cst_stimconvert(stimValues, whatstimtype, ...
                         0.033 ,30, 0,[]);
                     cststim = reshape(temporal.stim, ...
@@ -563,7 +604,7 @@ pm.Noise.seed=12345;
                     
                     %%%% convert back to ones %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     %%%% make it as cell %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    allstimimages(find(allstimimages)) = 1;
+%                     allstimimages(find(allstimimages)) = 1;
                     cellimage = num2cell(allstimimages,1)';
                     
                     mn = length(cellimage);
@@ -650,16 +691,13 @@ pm.Noise.seed=12345;
                     
                     end % end of irf creation
                     
-               
-                    
-                    
-                    
+
                     % convolve rf with stimulus for each t-channel
                     for cc=1:tmodel.num_channels
-                        pred = tmodel.chan_preds{cc}*pm.RF.values(:);
+                        pred = tmodel.chan_preds{cc}*(pm.RF.values(:));
                         
                         % apply css
-                        pred = bsxfun(@power, pred, 0.05);
+%                         pred = bsxfun(@power, pred, 0.05);
                         pred = double(pred);
                         
                         % apply hrf
@@ -709,7 +747,49 @@ pm.Noise.seed=12345;
                     hold on
                 end
                 
-            
+                
+                
+%                 figure()
+% 
+%                 pm.timeSeries = spaceStim' * pm.RF.values(:);
+%                 convValues    = conv(pm.timeSeries',pm.HRF.values);
+%                 subplot(4,1,1)
+%                 plot(convValues);
+%                 title(["mrVista- linear"])
+% 
+%                 
+%                 pm.timeSeries = spaceStim' * pm.RF.values(:);
+%                 pm.timeSeries = pm.timeSeries .^ 0.05;
+%                 convValues    = conv(pm.timeSeries',pm.HRF.values);
+%                 aa = zscore(convValues)
+%                 subplot(4,1,2)
+%                 plot(convValues);
+%                 title(["mrVista- css after"])
+%                 
+%                 newRF = pm.RF.values(:) .^ 0.05;
+%                 pm.timeSeries = spaceStim' * newRF;
+%                 convValues    = conv(pm.timeSeries',pm.HRF.values);
+%                 ab = zscore(convValues);
+% 
+%                 subplot(4,1,3)
+%                 plot(convValues); hold on
+%                 title(["mrVista- css before"])
+%                 
+%                 subplot(3,1,3)
+%                 newRF = pm.RF.values(:) .^ 0.05;
+%                 pm.timeSeries = spaceStim' * newRF;
+%                 convValues    = conv(pm.timeSeries',pm.HRF.values);
+%                 ab = zscore(convValues);
+% 
+%                 subplot(4,1,4)
+%                 newStim = spaceStim'.^ 0.05;
+%                 pm.timeSeries = newStim * pm.RF.values(:);
+%                 convValues    = conv(pm.timeSeries',pm.HRF.values);
+%                 plot(convValues); hold on
+%                 title(["mrVista- css before"])
+
+
+                
             % Scale the signal so that it has the required mean and contrast
             
             % Convert the output requested in pm.signalPercentage 
@@ -741,13 +821,10 @@ pm.Noise.seed=12345;
                         
                         c1 =  2 * pm.BOLDcontrast * prediction(:,1);
                         c2 = 2 * pm.BOLDcontrast * prediction(:,2);
-                        cstBOLD = 2 * pm.BOLDcontrast * sum(prediction,2)';
-                        %  c1 =  pm.BOLDmeanValue * (1 + 10 * pm.BOLDcontrast/100 * prediction(:,1));
-                        %  c2 = pm.BOLDmeanValue * (1 + 10 * pm.BOLDcontrast/100 * prediction(:,2));
-                        %  cstBOLD = pm.BOLDmeanValue * (1 + 10 * pm.BOLDcontrast/100 * sum(prediction,2)');
-                        
+                        cstBOLD = c1+c2;
+
                         pm.BOLD = cstBOLD;
-                        pm.cst = [c1 c2  cstBOLD'];
+                        pm.cst = [c1 c2  cstBOLD];
 %                         pm.cst{1} = c1;
 %                         pm.cst{2} = c2;
 %                         pm.cst{3} = pm.BOLD;
@@ -1040,9 +1117,16 @@ pm.Noise.seed=12345;
                         chan1 = pm.cst(:,1)' + 100 * pm.Noise.values;
                         chan2 =  pm.cst(:,2)' + 100 * pm.Noise.values;
                         chan3= pm.cst(:,3)'+ 100 * pm.Noise.values;
-                        pm.cst =[];
+%                         pm.cst =[];
                         pm.cst= [chan1;chan2;chan3 ];
                         
+                        synBOLD = pm.cst;
+                        whatname = char(pm.Stimulus.expName);
+                        whatstimtype = char(pm.Stimulus.stimseq);
+                        temp_type = char(pm.Stimulus.temporalType);
+                        syndir = [cstRootPath '/synBOLD/'];
+                        syn_file = [syndir whatname '_model-' temp_type 'synBOLD.mat'];
+                        save(syn_file,'synBOLD');
                     end
                         %
                     
