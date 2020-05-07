@@ -579,16 +579,34 @@ pm.Noise.seed=12345;
                    % whatstimtype = 'b';
                    % temp_type = '2ch-exp-sig'; % need to parse
                    
-                    whatname = char(pm.Stimulus.expName);
+                 
                     whatstimtype = char(pm.Stimulus.stimseq);
                     temp_type = char(pm.Stimulus.temporalType); 
-                    
+                    dur = num2str(size(pm.timeSeries,1));
+
                     fit_exps = {'Exp2'};
                     dohrf = 2;
                     
+                    whatname = char(pm.Stimulus.expName);
+                    a = strsplit(whatname,'_');
+                    for curstr = 1:length(a)
+                        if contains(a{curstr},dur)
+                            if contains(a{curstr},'s')
+                                shuff ='s';
+                            else
+                                shuff ='';
+                            end
+                            
+                        end
+                    end
+                    
+                    simplename = [char(pm.Type) '_' dur shuff whatstimtype '_model-' temp_type];
                     irfdir = [cstRootPath '/IRF/'];
-                    irf_file = [irfdir whatname '_model-' temp_type '_irf.mat'];
-%                     irf_file = [irfdir 'cst_seq-' whatstimtype '_model-' temp_type '_irf.mat'];
+                    
+                  
+%                     irf_file = [irfdir whatname '_model-' temp_type '_irf.mat'];
+                    irf_file = [irfdir simplename '_irf.mat'];
+
                     if isfile(irf_file)
                         disp('*cst irf exists no need to make a new one!*')
                         load(irf_file);
@@ -610,31 +628,33 @@ pm.Noise.seed=12345;
                     mn = length(cellimage);
                     ms = [[1:ceil(mn./200):mn-2] mn+1];
                     
+                    stimirf_chan_s = zeros(size(allstimimages),'single');
+                    stimirf_chan_t = zeros(size(allstimimages),'single');
+                    stimirf = zeros(size(allstimimages),'single');
                     fprintf('Generating irf for %s model...\n', temp_type)
                     for mn = 1:numel(ms)-1
                         %                         for mn = 441
                         
-                        stimirf_base=[];
-                        stimirf_t_s=[];
-                        stimirf_t_t=[];
-                        
+
+
                         tmodel = stModel(temp_type, fit_exps,'default');
                         tmodel.stim = cellimage(ms(mn):ms(mn+1)-1);
-                        
-                        
                         
                         [tmodel.onsets, tmodel.offsets, dur] = cellfun(@cst_codestim, ...
                             tmodel.stim, 'uni', false);
                         
-                        
+                        stimirf_base = zeros(size(cststim,2),size(tmodel.stim,1));
+                        stimirf_t_s = zeros(size(cststim,2),size(tmodel.stim,1));
+                        stimirf_t_t = zeros(size(cststim,2),size(tmodel.stim,1));
+
                         %%%% deal with empty cells (all zero)
                         empty_cells = cellfun(@isempty, tmodel.onsets);
                         if sum(empty_cells) > 0
                             sample =  tmodel.stim(find(empty_cells,1));
                             if tmodel.num_channels == 2
-                                emptysample = {[double(sample{1}) double(sample{1})]};
+                                emptysample = {[single(sample{1}) single(sample{1})]};
                             else
-                                emptysample = {[double(sample{1})]};
+                                emptysample = {[single(sample{1})]};
                             end
                             tmodel.stim(empty_cells) ={[]};
                         end
@@ -646,6 +666,7 @@ pm.Noise.seed=12345;
                         if sum(empty_cells) > 0
                             tmodel.pixel_preds(empty_cells) = emptysample;
                         end
+                        
                         %%%% transpose and sum up two channels
                         stimirf_base = cellfun(@transpose,tmodel.pixel_preds,'UniformOutput',false);
                         
@@ -657,10 +678,11 @@ pm.Noise.seed=12345;
                             stimirf_chan_s(:,ms(mn):ms(mn+1)-1) = stimirf_t_s;
                             stimirf_chan_t(:,ms(mn):ms(mn+1)-1) = stimirf_t_t;
                         else
-                            stimirf_base=cell2mat(stimirf_base)'; %        30000     X   1412
+                            stimirf_t_s  = cell2mat(cellfun(@(X) X(1,:), stimirf_base, 'uni', false))'; %  sustained
+                            stimirf_chan_s(:,ms(mn):ms(mn+1)-1) = stimirf_t_s;
                         end
                         
-                        stimirf(:,ms(mn):ms(mn+1)-1) = stimirf_base;
+%                         stimirf(:,ms(mn):ms(mn+1)-1) = stimirf_base;
                         
                         if ismember(mn, round((1:10)/10* numel(ms)-1)), % every 10% draw a dot
                             fprintf(1,'(irf)');drawnow;
@@ -668,12 +690,12 @@ pm.Noise.seed=12345;
                         
                         
                     end
-                    
+                    % made single to account for matrix storage size
                     if tmodel.num_channels == 2
                         tmodel.chan_preds{1} = stimirf_chan_s;
                         tmodel.chan_preds{2} = stimirf_chan_t;
                     else
-                        tmodel.chan_preds{1} = stimirf_base;
+                        tmodel.chan_preds{1} = stimirf_chan_s;
                     end
                     
                     
@@ -814,17 +836,20 @@ pm.Noise.seed=12345;
                     pm.BOLD = 2 * pm.BOLDcontrast/100 * pm.BOLDconv;
                 case {'spc'}
                     pm.BOLD = 2 * pm.BOLDcontrast * pm.BOLDconv;
-                    
+
                     % CST under construction
                     % [CST]: need to figure out amplitude
                     if strcmp(pm.Type,'cst')
                         
-                        c1 =  2 * pm.BOLDcontrast * prediction(:,1);
-                        c2 = 2 * pm.BOLDcontrast * prediction(:,2);
-                        cstBOLD = c1+c2;
-
-                        pm.BOLD = cstBOLD;
-                        pm.cst = [c1 c2  cstBOLD];
+                        if contains(temp_type,'2ch')
+                            c1 = 3 * pm.BOLDcontrast * prediction(:,1);
+                            c2 = 3 * pm.BOLDcontrast * prediction(:,2);
+                            cstBOLD = c1+c2;
+                            pm.cst = [c1 c2  cstBOLD];
+                        else
+                            pm.cst = 3 * pm.BOLDcontrast * prediction(:,1);
+                        end
+                            
 %                         pm.cst{1} = c1;
 %                         pm.cst{2} = c2;
 %                         pm.cst{3} = pm.BOLD;
@@ -1113,22 +1138,121 @@ pm.Noise.seed=12345;
                     
                     % [cst]
                     if strcmp(pm.Type,'cst')
-                        pm.BOLDnoise = pm.BOLD + 100 * pm.Noise.values;
-                        chan1 = pm.cst(:,1)' + 100 * pm.Noise.values;
-                        chan2 =  pm.cst(:,2)' + 100 * pm.Noise.values;
-                        chan3= pm.cst(:,3)'+ 100 * pm.Noise.values;
-%                         pm.cst =[];
-                        pm.cst= [chan1;chan2;chan3 ];
+                        temp_type = char(pm.Stimulus.temporalType);
+                        if contains(temp_type,'2ch')
+                            chan1 = pm.cst(:,1)' + 100 * pm.Noise.values ./ 2;
+                            chan2 =  pm.cst(:,2)' + 100 * pm.Noise.values ./2;
+                            chan3= chan1+chan2;
+                            %                         pm.cst =[];
+                            pm.cst= [chan1;chan2;chan3 ];
+                            pm.BOLDnoise = chan3;
+                            
+
+                        else
+                            chan1 = pm.cst(:,1)' + 100 * pm.Noise.values ./ 2;
+                            pm.cst= [chan1];
+                            pm.BOLDnoise = chan1;
+                        end
                         
                         synBOLD = pm.cst;
                         whatname = char(pm.Stimulus.expName);
                         whatstimtype = char(pm.Stimulus.stimseq);
                         temp_type = char(pm.Stimulus.temporalType);
+                        
+                        % this gets saved as NIFTI
+                        
+                        if strcmp(pm.Noise.seed, 'random')
+                           % noised
+                             if pm.Noise.white_amplitude == 0.016
+                                 noisecond = 'low';
+                             else
+                                 noisecond = 'high';
+                             end
+
+                        else
+                            % no-noised
+                            noisecond = 'no_noise';
+                        end
+                        
+                        % save BOLD
+                        
+                        whatstimtype = char(pm.Stimulus.stimseq);
+                        temp_type = char(pm.Stimulus.temporalType);
+                        dur = num2str(size(pm.timeSeries,1));
+                        sigmaVal = num2str(pm.RF.sigmaMajor);
+                        
+                        whatname = char(pm.Stimulus.expName);
+                        a = strsplit(whatname,'_');
+                        for curstr = 1:length(a)
+                            if contains(a{curstr},dur)
+                                if contains(a{curstr},'s')
+                                    shuff ='s';
+                                else
+                                    shuff ='';
+                                end
+                                
+                            end
+                        end
+                        
+                        simplename = [char(pm.Type) '_' noisecond '_' dur shuff whatstimtype ...
+                            '_sigma-' sigmaVal ...
+                            '_model-' temp_type ...
+                         ];
+
                         syndir = [cstRootPath '/synBOLD/'];
-                        syn_file = [syndir whatname '_model-' temp_type 'synBOLD.mat'];
+                        syn_file = [syndir simplename '_synBOLD.mat'];
                         save(syn_file,'synBOLD');
+                        
+                    elseif strcmp(pm.Type,'linear')
+                        
+                        synBOLD = pm.BOLDnoise;
+                        
+                        if strcmp(pm.Noise.seed, 'random')
+                            % noised
+                            if pm.Noise.white_amplitude == 0.016
+                                noisecond = 'low';
+                            else
+                                noisecond = 'high';
+                            end
+                            
+                        else
+                            % no-noised
+                            noisecond = 'no_noise';
+                        end
+                        
+                        whatstimtype = char(pm.Stimulus.stimseq);
+                        temp_type = 'linear';
+                        dur = num2str(size(pm.timeSeries,1));
+                        sigmaVal = num2str(pm.RF.sigmaMajor);
+                        
+                        whatname = char(pm.Stimulus.expName);
+                        a = strsplit(whatname,'_');
+                        for curstr = 1:length(a)
+                            if contains(a{curstr},dur)
+                                if contains(a{curstr},'s')
+                                    shuff ='s';
+                                else
+                                    shuff ='';
+                                end
+                                
+                            end
+                        end
+                        
+                        
+                        
+                        simplename = [char(pm.Type) '_' noisecond '_' dur shuff whatstimtype ...
+                            '_sigma-' sigmaVal ...
+                            '_model-' temp_type ...
+                            ];
+                        syndir = [cstRootPath '/synBOLD/'];
+                        syn_file = [syndir simplename '_synBOLD.mat'];
+                        save(syn_file,'synBOLD');
+                        
                     end
-                        %
+              
+                    
+                    
+                    %
                     
                     
                 case {'bold'}

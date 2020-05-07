@@ -208,6 +208,7 @@ for nn=1:nchcks
     if writefiles
     	% BOLD FILE
     	fname = fullfile(tmpName, sprintf('%s_%04i.nii.gz', subjectName,nn));
+
     	pmForwardModelToNifti(DT, 'fname',fname, 'demean',false);
     
     	% JSON FILE
