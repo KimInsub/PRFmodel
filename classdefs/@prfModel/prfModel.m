@@ -1140,9 +1140,10 @@ pm.Noise.seed=12345;
                     if strcmp(pm.Type,'cst')
                         temp_type = char(pm.Stimulus.temporalType);
                         if contains(temp_type,'2ch')
-                            chan1 = pm.cst(:,1)' + 100 * pm.Noise.values ./ 2;
-                            chan2 =  pm.cst(:,2)' + 100 * pm.Noise.values ./2;
-                            chan3= chan1+chan2;
+                            chan1 = pm.cst(:,1)';
+                            chan2 =  pm.cst(:,2)';
+                            chan3 = pm.cst(:,1)'+ pm.cst(:,2)';
+                            chan3 = chan3 + 100 * pm.Noise.values;
                             %                         pm.cst =[];
                             pm.cst= [chan1;chan2;chan3 ];
                             pm.BOLDnoise = chan3;
@@ -1155,10 +1156,6 @@ pm.Noise.seed=12345;
                         end
                         
                         synBOLD = pm.cst;
-                        whatname = char(pm.Stimulus.expName);
-                        whatstimtype = char(pm.Stimulus.stimseq);
-                        temp_type = char(pm.Stimulus.temporalType);
-                        
                         % this gets saved as NIFTI
                         
                         if strcmp(pm.Noise.seed, 'random')
