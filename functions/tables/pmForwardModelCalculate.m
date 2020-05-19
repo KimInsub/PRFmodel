@@ -130,8 +130,6 @@ for nn=1:nchcks
         for jj=1:width(dt.Stimulus)
                 paramName               = dt.Stimulus.Properties.VariableNames{jj};
                 pm.Stimulus.(paramName) = dt.Stimulus.(paramName);
-        
-
         end
         
      
@@ -186,6 +184,30 @@ for nn=1:nchcks
             
         end
         pm.Noise.compute;
+        %% Temporal
+        for jj=1:width(dt.Temporal)
+            paramName          = dt.Temporal.Properties.VariableNames{jj};
+            val                = dt.Temporal.(paramName);
+            if iscell(val)
+                pm.Temporal.(paramName) = val{:};
+            else
+                pm.Temporal.(paramName) = val;
+            end
+        end
+        
+        if ii > 1
+            if isequal(dtprev.Temporal, dt.Temporal)
+%                 pm.Temporal.chan_preds = pmprev.Temporal.chan_preds;
+                pm.Temporal.run_preds = pmprev.Temporal.run_preds;
+
+            else
+                pm.Temporal.compute;
+            end
+        else
+            pm.Temporal.compute;
+        end
+        
+        
         %% Compute the synthetic signal
         % The compute at the top level computes all the lovel level ones.
         % Just do it once here.
@@ -299,15 +321,7 @@ if writefiles
     if ~succ;error('Could not move %s to %s', stimNiftiFname,outputdir);end
 
     %[cst] matfile save
-    matsing = DT.pm;
-    matseq = char(DT.Stimulus.stimseq);
-    mattype = char(DT.Stimulus.temporalType);
-    for vv = 1:length(DT.pm)
-        synBOLD{vv} = matsing(vv).cst;
-    end
-    temptname = [outputdir '/synBOLD_cst_seq-' matseq '-tm-' mattype '.mat'];
-    synSTIM = squeeze(pm1.Stimulus.userVals(51,51,:));
-    save(temptname,'synBOLD','synSTIM');
+    st_saveBOLD(DT);
 
     
     

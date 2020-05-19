@@ -143,8 +143,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         LocalPath        ;
         userVals         ;  % No calculation required, accept values directly. Empty by default.
         myload           ;  % [cst] user specific stimulus
-        stimseq          ;  % [cst] exp A exp B  exp C
-        temporalType     ;  % [cst] temporal modeling
+%         stimseq          ;  % [cst] exp A exp B  exp C
+%         temporalType     ;  % [cst] temporal modeling
 
     end
     
@@ -178,9 +178,9 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.frameduration   = 4;
             d.Shuffle         = false; % Shuffle bars or content
             d.shuffleSeed     = 12345; % Can be 'shuffle' or an integer
-            d.myload          = "none"; % [cst] load specific datafile
-            d.stimseq         = "a"; % [cst] stim sequance Exp a, b, or c
-            d.temporalType    =  "2ch-exp-sig"; %[cst] stim temporal model
+            d.myload          = "cst_2_120"; % [cst] load specific datafile
+%             d.stimseq         = "a"; % [cst] stim sequance Exp a, b, or c
+%             d.temporalType    =  "2ch-exp-sig"; %[cst] stim temporal model
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -208,8 +208,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addParameter('shuffle'        ,d.Shuffle        , @islogical);
             p.addParameter('shuffleseed'    ,d.shuffleSeed);
             p.addParameter('myload'         ,d.myload         , @ischar); %[cst]
-            p.addParameter('stimseq'        ,d.stimseq        , @ischar); %[cst]
-            p.addParameter('temporalType'   ,d.temporalType   , @ischar); %[cst]
+%             p.addParameter('stimseq'        ,d.stimseq        , @ischar); %[cst]
+%             p.addParameter('temporalType'   ,d.temporalType   , @ischar); %[cst]
 
             p.addParameter('uservals'       ,[]               , @isnumeric);
             p.parse(pm,varargin{:});
@@ -230,8 +230,8 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
             stim.Shuffle         = p.Results.shuffle;
             stim.shuffleSeed     = p.Results.shuffleseed;
             stim.myload          = p.Results.myload; %[cst]
-            stim.stimseq         = p.Results.stimseq; %[cst]
-            stim.temporalType    = p.Results.temporalType; %[cst]
+%             stim.stimseq         = p.Results.stimseq; %[cst]
+%             stim.temporalType    = p.Results.temporalType; %[cst]
 
             stim.userVals        = p.Results.uservals;
             
@@ -336,10 +336,6 @@ classdef pmStimulus <  matlab.mixin.SetGet & matlab.mixin.Copyable
         end
         function v = get.timePointsN(stim)
             v = size(stim.getStimValues,3);
-%             switch stim.PM.Type
-%                 case 'cst'
-%                     v = v / 1000;
-%             end
         end
         function timePointsSeries = get.timePointsSeries(stim)
             timePointsSeries = pmTimePointsSeries(stim.TR, stim.timePointsN);

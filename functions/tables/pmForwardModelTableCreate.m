@@ -105,6 +105,26 @@ for ii=1:length(fieldsToCombine)
     fieldName   = fieldsToCombine{ii};
     fieldValues = COMBINE_PARAMETERS.(fieldName);
     switch fieldName
+        case {'Temporal'}
+            subFieldsToCombine = fieldnames(fieldValues);
+            for ii=1:length(subFieldsToCombine)
+                % Construct fieldname
+                subFieldName  = subFieldsToCombine{ii};
+                fieldValues2   = getfield(COMBINE_PARAMETERS,fieldName,subFieldName);
+                fieldValues2 = convertCharsToStrings(fieldValues2);
+                if ~isstruct(fieldValues2)
+                    
+                    % else
+                    synthDT.(fieldName).(subFieldsToCombine{ii}) = fieldValues2(1);
+                    % If it is only one value, add it to defaults and delete it
+                    if length(fieldValues2)==1
+                        tmpStruct = REDUCED_COMBINE_PARAMETERS.(fieldName);
+                        tmpStruct = rmfield(tmpStruct, subFieldsToCombine{ii});
+                        REDUCED_COMBINE_PARAMETERS.(fieldName) = tmpStruct;
+                    end
+                end
+                
+            end
         case {'HRF','hrf'}
             % We are only interested in the first array if there are more than one
             nh          = 1;

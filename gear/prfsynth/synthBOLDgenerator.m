@@ -156,6 +156,8 @@ end
 PARAMETERS.HRF       = [PARAMETERS.HRF{:}];
 PARAMETERS.RF        = [PARAMETERS.RF{:}];
 PARAMETERS.Stimulus  = [PARAMETERS.Stimulus{:}];
+PARAMETERS.Temporal  = [PARAMETERS.Temporal{:}];
+
 % Noise can have different amount of variables. Complete them and concatenate
 for nh=1:length(PARAMETERS.Noise)
     thisNoise = PARAMETERS.Noise(nh); 
@@ -169,14 +171,15 @@ for nh=1:length(PARAMETERS.Noise)
     PARAMETERS.Noise(nh) = {completeNoise};
 end
 PARAMETERS.Noise     = [PARAMETERS.Noise{:}];
+
 % Convert some char-s to string-s, char-s are treated as individual elements...
 PARAMETERS.Type             = string(PARAMETERS.Type);
 PARAMETERS.signalPercentage = string(PARAMETERS.signalPercentage);
 PARAMETERS.RF.Type          = string(PARAMETERS.RF.Type);
 PARAMETERS.Stimulus.expName = string(PARAMETERS.Stimulus.expName);
 PARAMETERS.Stimulus.myload = string(PARAMETERS.Stimulus.myload);
-PARAMETERS.Stimulus.stimseq = string(PARAMETERS.Stimulus.stimseq);
-PARAMETERS.Stimulus.temporalType = string(PARAMETERS.Stimulus.temporalType);
+% PARAMETERS.Stimulus.stimseq = string(PARAMETERS.Stimulus.stimseq);
+% PARAMETERS.Stimulus.temporalType = string(PARAMETERS.Stimulus.temporalType);
 
 % Generate the same thing from the json file
 synthDT = pmForwardModelTableCreate(PARAMETERS, 'repeats', J.repeats);
