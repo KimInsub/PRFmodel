@@ -37,7 +37,7 @@ p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
 
 p.addParameter('stimseq', 'a'   , @ischar);
-p.addParameter('temporalType', '2ch-exp-sig', @ischar);
+p.addParameter('temporalModel', 'None', @ischar);
 
 p.parse(homedir, stimfile, datafile, stimradius, varargin{:});
 % Assign it
@@ -49,13 +49,14 @@ detrend       = p.Results.detrend;
 keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
 stimseq = p.Results.stimseq;
-temporalType = p.Results.temporalType;
+temporalModel = p.Results.temporalModel;
 
 % Disp the input files for debugging
 fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
 fprintf('\n[pmVistasoft] This is stimfile: %s\n',stimfile)
 fprintf('\n[pmVistasoft] This is datafile: %s\n',datafile)
 fprintf('\n[pmVistasoft] This is stimradius: %i\n',stimradius)
+fprintf('\n[pmVistasoft] This is temporalModel: %s\n',temporalModel)
 
 
 
@@ -193,11 +194,11 @@ vw = initHiddenInplane();
 
 vw = rmMain(vw, [], wSearch, ...
             'model', {model}, ...
-            'matFileName', 'tmpResults', ...
+            'matFileName', 'tmpResults', ...  %'matFileName', 'tmpResults', ...
             'keepAllPoints', keepAllPoints, ...
             'numberStimulusGridPoints', numberStimulusGridPoints, ...
             'stimseq',stimseq, ...
-            'temporalType',temporalType);
+            'temporalModel',temporalModel);
 
 % Load the results        
 

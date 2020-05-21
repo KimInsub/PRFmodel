@@ -184,7 +184,7 @@ for nn=1:nchcks
             
         end
         pm.Noise.compute;
-        %% Temporal
+        %% Temporal [st]
         for jj=1:width(dt.Temporal)
             paramName          = dt.Temporal.Properties.VariableNames{jj};
             val                = dt.Temporal.(paramName);

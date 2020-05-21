@@ -316,8 +316,7 @@ pm.Noise.seed=12345;
         RF               ;
         HRF              ;
         Noise            ;
-        Temporal         ; %[cst]
-        spaceTime        ; % [cst] values added
+        Temporal         ; %[st]
 
         
         % Other required options (double, char, logical)
