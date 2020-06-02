@@ -33,6 +33,7 @@ p.addParameter('model'        , 'one gaussian'  , @ischar);
 p.addParameter('grid'         , false           , @islogical);
 p.addParameter('wsearch'      , 'coarse to fine', @ischar);
 p.addParameter('detrend'      , 1               , @isnumeric);
+p.addParameter('shuffled'      , false            , @islogical);
 p.addParameter('keepAllPoints', false           , @islogical);
 p.addParameter('numberStimulusGridPoints', 50   , @isnumeric);
 
@@ -50,6 +51,7 @@ keepAllPoints = p.Results.keepAllPoints;
 numberStimulusGridPoints = p.Results.numberStimulusGridPoints;
 stimseq = p.Results.stimseq;
 temporalModel = p.Results.temporalModel;
+shuffled = p.Results.shuffled;
 
 % Disp the input files for debugging
 fprintf('\n[pmVistasoft] This is homedir: %s\n',homedir)
@@ -112,10 +114,10 @@ fmri        = niftiRead(datafile);
 ippath      = fullfile('.', 'Raw', 'inplane.nii.gz');
 ip          = fmri; 
 ip.data     = mean(fmri.data, length(size(fmri.data)));
-ip.dim(end) = 1
+ip.dim(end) = 1;
 niftiWrite(ip, ippath);
 
-A = niftiRead(ippath)
+A = niftiRead(ippath);
 
 
 %% Set up the vistasoft session
@@ -156,11 +158,10 @@ vw = initHiddenInplane();
 % edit GLU: dataTYPES is not found, but it was stablished as global in mrInit()
 % Load mrSESSION in here to see if this solves it
 load(fullfile(homedir,'mrSESSION.mat'))
-disp(dataTYPES)
-dataTYPES.scanParams
+dataTYPES.scanParams;
 % Set default retinotopy stimulus model parameters
 sParams = rmCreateStim(vw);
-sParams
+sParams;
 sParams.stimType   = 'StimFromScan'; % This means the stimulus images will
                                      % be read from a file.
 sParams.stimSize   = stimradius;     % stimulus radius (deg visual angle)
@@ -177,7 +178,7 @@ sParams.hrfType    = 'two gammas (SPM style)';
 % pre-scan duration will be stored in frames for the rm, but was stored in
 % seconds in the stimulus file
 sParams.prescanDuration = 0;
-
+sParams.shuffled = shuffled;
 
 dataTYPES = dtSet(dataTYPES, 'rm stim params', sParams);
 

@@ -65,7 +65,6 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addRequired ('pm',     @(x)(isa(x,'prfModel')));
             p.addParameter('stimseq',d.stimseq        , @ischar);
             p.addParameter('temporalModel',d.temporalModel   , @ischar);
-            p.addParameter('Type', d.Type{:}       , @ischar);
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
