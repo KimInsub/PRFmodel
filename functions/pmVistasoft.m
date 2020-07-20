@@ -80,8 +80,6 @@ fprintf('\n[pmVistasoft] This is temporalModel: %s\n',temporalModel)
 %% Set up files and directories
 % mkdir(homedir); 
 
-
-
 cd(homedir);
 % 
 % if exist(fullfile(homedir,'Raw'),'dir');error('RAW DIR EXISTS');end

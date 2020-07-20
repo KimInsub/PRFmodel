@@ -40,7 +40,13 @@ if (isstring(input) || ischar(input))
         % File must contain the variable 'stim' which includes values
         % and ....
         s = load(input);
-        stimValues = s.stim;
+        tempstim = s.stim;
+%         display.backColorIndex = 128;
+%         tempstim = rmfilter_binary(tempstim, display);
+        for ei = 1:size(tempstim,3)
+            stimValues(:,:,ei) = imresize(tempstim(:,:,ei),[101 101]);
+        end
+        
     else
         error('File not found %s\n',input);
     end
