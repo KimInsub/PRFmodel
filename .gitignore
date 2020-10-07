@@ -3,5 +3,4 @@
 *.swp
 */*/compiled/*
 *.err
-*.mat
 /local/*
