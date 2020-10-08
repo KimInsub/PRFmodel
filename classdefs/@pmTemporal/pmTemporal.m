@@ -13,7 +13,8 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
     %
     % See also
     %
-    
+    % DTcalc = synthBOLDgenerator(json, output_dir);
+
     % Examples
     %{
     %}
@@ -31,6 +32,10 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
         spc              ;  % [st] saves spc responses
         synBOLD          ;  % [st] saves final BOLD output with Noise added
         synBOLDpath      ;  % [st] path to save BOLD+noise predictions
+        resolution       ;  % [st] Screen resolution (Hz)
+        stim_on          ;  % [st] Number of on frames for each trial 
+        stim_off         ;  % [st] Number of off frames for each trial
+
     end
     
     properties (SetAccess = private, GetAccess = public)
@@ -47,8 +52,10 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
     %%
     methods (Static)
         function d = defaultsGet
-            d.stimseq        = "a"; % [cst] stim sequance Exp a, b, or c
+            d.stimseq        = "a"; % [st] stim sequance Exp a, b, or c; or userdefined
             d.temporalModel  = "None"; %[cst] stim temporal model
+            d.resolution     = "60"; % Screen refresh Rate (Hz)
+
             % Convert to table and return
             d = struct2table(d,'AsArray',true);
         end
@@ -65,14 +72,17 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
             p.addRequired ('pm',     @(x)(isa(x,'prfModel')));
             p.addParameter('stimseq',d.stimseq        , @ischar);
             p.addParameter('temporalModel',d.temporalModel   , @ischar);
+            p.addParameter('resolution',d.resolution   , @ischar);
+
             p.parse(pm,varargin{:});
             
             % Initialize the pm model and hrf model parameters
             temporal.PM             = pm;
             
-            temporal.stimseq         = p.Results.stimseq;
+            temporal.stimseq          = p.Results.stimseq;
             temporal.temporalModel    = p.Results.temporalModel;
-            
+            temporal.resolution       = p.Results.resolution;
+
             % Set path for saving data
             temporal.IRFpath       = fullfile(stRootPath,'IRF/');
             temporal.synBOLDpath   = fullfile(stRootPath,'synBOLD/');
