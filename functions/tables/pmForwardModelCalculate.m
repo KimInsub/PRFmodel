@@ -317,11 +317,11 @@ if writefiles
     if ~exist(jsonfname,'file'),error('Could not create output json file %s in %s', jsonfname, outputdir);end
         
     % Stim: is always de same
-    succ = movefile(stimNiftiFname,outputdir);
+    succ = copyfile(stimNiftiFname,outputdir);
     if ~succ;error('Could not move %s to %s', stimNiftiFname,outputdir);end
 
     %[cst] matfile save
-    st_saveBOLD(DT);
+    st_saveBOLD(DT,outputdir);
 
     
     
