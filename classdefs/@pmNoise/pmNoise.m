@@ -182,7 +182,7 @@ classdef pmNoise <  matlab.mixin.SetGet & matlab.mixin.Copyable
             d.jitter = [0,0];
             
             switch strrep(lower(d.voxel),' ','')
-                case {'mid','midnoise'}
+                case {'mid','midnoise','medium'}
                     % White Noise
                     d.white_amplitude    = 0.032; % white noise constant to relate to random number generator
                     % Cardiac
