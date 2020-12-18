@@ -84,8 +84,11 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
             temporal.resolution       = p.Results.resolution;
 
             % Set path for saving data
-            temporal.IRFpath       = fullfile(stRootPath,'IRF/');
-            temporal.synBOLDpath   = fullfile(stRootPath,'synBOLD/');
+            
+            temporal.IRFpath =Constants.defaultsGet.IRF_dir;
+            
+%             temporal.IRFpath       = fullfile(stRootPath,'IRF/');
+%             temporal.synBOLDpath   = fullfile(stRootPath,'synBOLD/');
             
         end
         
@@ -116,7 +119,7 @@ classdef pmTemporal <   matlab.mixin.SetGet & matlab.mixin.Copyable
                 temporal.PM.RF.compute;
                 temporal.PM.HRF.compute;
                 
-                irf_file = [temporal.IRFpath temporal.Name ...
+                irf_file = [temporal.IRFpath '/' temporal.Name ...
                     '_irf.mat'];
                 
                 % compute IRF
